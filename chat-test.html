@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>C2C 聊天测试大厅</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', sans-serif; padding: 20px; }
+        #chatBox { width: 400px; margin: 0 auto; border: 1px solid #ccc; border-radius: 8px; padding: 15px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        #messages { height: 300px; border: 1px solid #eee; background-color: #f9f9f9; overflow-y: scroll; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        .msg-item { margin-bottom: 8px; line-height: 1.5; font-size: 14px; }
+        .system { color: #888; text-align: center; font-size: 12px; }
+        .me { color: #28a745; font-weight: bold; }
+        .server { color: #007bff; font-weight: bold; }
+        input { width: 290px; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+
+<div id="chatBox">
+    <h3 style="text-align: center; margin-top: 0;">💬 闲鱼模拟砍价大厅</h3>
+    <div id="messages"></div>
+
+    <div>
+        <input type="text" id="msgInput" placeholder="输入你要砍价的内容 (比如: 老板，50包邮吗？)">
+        <button onclick="sendMsg()">发送消息</button>
+    </div>
+</div>
+
+<script>
+    // 🚨 核心魔术：连接咱们刚写的 Netty WebSocket 服务器！
+    let ws = new WebSocket("ws://127.0.0.1:9090/ws");
+
+    // 1. 成功连上服务器时触发
+    ws.onopen = function() {
+        appendMsg("🟢 成功进入聊天大厅！可以开始发消息了。", "system");
+    };
+
+    // 2. 收到服务器发来的消息时触发
+    ws.onmessage = function(event) {
+        appendMsg("老板回复: " + event.data, "server");
+    };
+
+    // 3. 连接断开时触发
+    ws.onclose = function() {
+        appendMsg("🔴 连接已断开，请检查服务器是否运行。", "system");
+    };
+
+    // 点击发送按钮的逻辑
+    function sendMsg() {
+        let input = document.getElementById("msgInput");
+        let text = input.value;
+        if(text) {
+            ws.send(text); // 把文字推送到 Netty
+            appendMsg("我说: " + text, "me");
+            input.value = ""; // 清空输入框
+        }
+    }
+
+    // 把消息画到页面上的小工具
+    function appendMsg(text, type) {
+        let div = document.getElementById("messages");
+        div.innerHTML += `<div class="msg-item ${type}">${text}</div>`;
+        div.scrollTop = div.scrollHeight; // 自动滚动到底部
+    }
+
+    // 支持回车键发送消息
+    document.getElementById("msgInput").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            event.preventDefault();
+            sendMsg();
+        }
+    });
+</script>
+</body>
+</html>

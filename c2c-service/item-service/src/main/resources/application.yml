@@ -1,0 +1,56 @@
+server:
+  port: 8082
+  address: 127.0.0.1
+
+spring:
+  application:
+    name: item-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://127.0.0.1:3306/c2c_item?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${MYSQL_PASSWORD}
+
+  # 修复了缩进：Redis 和 ES 必须挂在 spring 下面
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      database: 0
+  elasticsearch:
+    uris: http://localhost:9200
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+minio:
+  endpoint: http://127.0.0.1:9000
+  accessKey: ${MINIO_ACCESS_KEY}
+  secretKey: ${MINIO_SECRET_KEY}
+  bucketName: c2c-items1
+
+
+# 🤖 AI 图片识别配置 (智谱 GLM-4V OpenAI 兼容接口)
+openai:
+  api:
+    key: ${AI_API_KEY}
+    base-url: https://open.bigmodel.cn/api/paas/v4
+    model: glm-4v-flash
+
+# 🚨 RocketMQ 消息队列配置
+rocketmq:
+  name-server: 127.0.0.1:9876 # 指向咱们刚才启动的通讯塔
+  producer:
+    group: item-producer-group # 给发消息的团队起个代号
+
+security:
+  internal-secret: ${INTERNAL_API_SECRET}
+
+spring.servlet.multipart:
+  max-file-size: 5MB
+  max-request-size: 5MB

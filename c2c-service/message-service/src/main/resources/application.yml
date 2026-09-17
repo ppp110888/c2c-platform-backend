@@ -1,0 +1,26 @@
+server:
+  port: 8084 # 消息服务的普通 HTTP 端口
+  address: 127.0.0.1
+
+spring:
+  application:
+    name: message-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+
+  # 🚨 新增：MongoDB 连接配置 (数据库名为 c2c_message，会自动创建)
+  data:
+    mongodb:
+      uri: mongodb://127.0.0.1:27017/c2c_message
+
+
+# 自定义配置：Netty WebSocket 监听的端口
+netty:
+  port: 9090
+
+security:
+  internal-secret: ${INTERNAL_API_SECRET}
+
+

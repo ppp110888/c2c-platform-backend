@@ -1,0 +1,119 @@
+### 1. 登录接口：获取真实 Token
+POST http://localhost:8080/api/user/login
+Content-Type: application/json
+
+{
+  "username": "test_user",
+  "password": "123456"
+}
+
+> {%
+    if (response.status === 200 && response.body.code === 200) {
+        client.global.set("authToken", response.body.data.token);
+        client.log("✅ 登录成功！Token 已自动提取并保存。");
+    } else {
+        client.log("❌ 登录失败，请检查账号密码或微服务状态！");
+    }
+%}
+
+### 0. 测试用户注册 (获取第二把钥匙的前置动作)
+POST http://localhost:8080/api/user/register
+Content-Type: application/json
+
+{
+  "username": "buyer002",
+  "password": "123456"
+}
+
+### 获取买家 (User 2) 的 Token
+POST http://localhost:8080/api/user/login
+Content-Type: application/json
+
+{
+  "username": "buyer001",
+  "password": "123456"
+}
+
+
+### 2. 发布二手商品接口：携带 Token
+POST http://localhost:8080/api/item/publish
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "categoryId": 1,
+  "title": "99新 苹果17pm",
+  "content": "买来由于工作太忙一直吃灰，几乎没用过，无划痕，原装箱说全，包邮送保护壳。",
+  "price": 1200.00,
+  "originalPrice": 1999.00,
+  "conditionLevel": 9,
+  "city": "上海市"
+}
+
+### 3. 获取首页商品列表 (测试 Redis 并发)
+GET http://localhost:8080/api/item/home/list
+
+### 4. 测试下单 (自动携带第 1 步登录拿到的 Token)
+POST http://localhost:8080/api/order/create
+Content-Type: application/json
+Authorization: Bearer {{authToken}}
+
+{
+  "itemId": 4,
+  "sellerId": 2,
+  "payAmount": 2500.00
+}
+
+### 5. 测试支付订单 (注意：必须在下单后的 30 秒内执行！)
+POST http://localhost:8080/api/order/pay?orderNo=4d9d1baa8cae4f70
+Authorization: Bearer {{authToken}}
+
+### 6. 查询我买到的订单 (买家视角)
+GET http://localhost:8080/api/order/my/bought
+Authorization: Bearer {{authToken}}
+
+### 7. 查询我卖出的订单 (卖家视角)
+GET http://localhost:8080/api/order/my/sold
+Authorization: Bearer {{authToken}}
+
+### 8. 测试图片上传到 MinIO
+POST http://localhost:8080/api/item/file/upload
+# 必须带上咱们登录获取的 Token，过网关保安这一关
+Authorization: Bearer {{authToken}}
+# 定义表单的边界字符串 (可以随便写，只要上下一致就行)
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="test.jpg"
+Content-Type: image/jpeg
+
+# 这里的 `<` 符号代表读取本地文件，路径相对当前 .http 文件
+< ./test.jpg
+--WebAppBoundary--
+
+### 9. 查询商品详情页
+GET http://localhost:8080/api/item/detail?itemId=1
+# (如果在网关把 /api/item/detail 加进了白名单，这行 Authorization 就可以不带；否则就带上)
+Authorization: Bearer {{authToken}}
+
+### 10. 触发数据大迁徙：将 MySQL 商品同步到 ES
+GET http://localhost:8080/api/item/sync-es
+# 如果网关拦截了，记得加上你的超级管理员 Token
+Authorization: Bearer {{authToken}}
+
+### 11. 测试 ES 高性能分词搜索
+POST http://localhost:8080/api/item/search
+Content-Type: application/json
+
+{
+  "keyword": "索尼降噪",
+  "pageNum": 1,
+  "pageSize": 10
+}
+
+### 12. Mock测试：伪造支付宝发送【支付成功】回调
+POST http://localhost:8083/alipay/notify
+# 支付宝回调的标准格式必须是 form 表单提交！
+Content-Type: application/x-www-form-urlencoded
+
+out_trade_no=be5243f37729431a&trade_status=TRADE_SUCCESS

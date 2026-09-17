@@ -1,0 +1,27 @@
+server:
+  port: 8081 # 网关是 8080，user-service 用 8081
+  address: 127.0.0.1
+
+spring:
+  application:
+    name: user-service # 注册到 Nacos 的服务名
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848 # Nacos 地址
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # 注意修改下方的 root 和密码为你本机的 MySQL 账号密码
+    url: jdbc:mysql://127.0.0.1:3306/c2c_user?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${MYSQL_PASSWORD}
+
+security:
+  internal-secret: ${INTERNAL_API_SECRET}
+
+# MyBatis-Plus 配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 在控制台打印 SQL 语句，方便本地调试
